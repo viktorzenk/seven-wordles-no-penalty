@@ -1,44 +1,46 @@
 import "./App.css";
-import common from "./common.json";
-import { dictionarySet, pick, seed } from "./util";
 import Game from "./Game";
-import { names } from "./names";
 import { useState } from "react";
 import { Row, RowState } from "./Row";
 import { Clue } from "./clue";
 
 function App() {
   const [about, setAbout] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [initialTime, setInitialTime] = useState(0);
+
   const maxGuesses = 6;
   return (
     <div className="App-container">
-      <h1>hello wordl</h1>
+      <h1>seven wordles</h1>
+      {!about && <button
+          style={{ flex: "0", display: (started ? 'none' : 'block') }}
+          onClick={() => {
+            setStarted(true);
+            setInitialTime(Date.now());
+          }}
+        >
+          Start!
+        </button>}
       <div style={{ position: "absolute", right: 5, top: 5 }}>
         <a href="#" onClick={() => setAbout((a) => !a)}>
           {about ? "Close" : "About"}
         </a>
       </div>
-      <div style={{ position: "absolute", left: 5, top: 5 }}>
-        <a
-          href="#"
-          onClick={() =>
-            (document.location = seed
-              ? "/"
-              : "?seed=" +
-                new Date().toISOString().replace(/-/g, "").slice(0, 8))
-          }
-        >
-          {seed ? "Random" : "Today's"}
-        </a>
-      </div>
       {about && (
         <div className="App-about">
           <p>
-            <i>hello wordl</i> is a remake of the word game{" "}
+            <i>seven wordles</i> is a remake of the word game{" "}
             <a href="https://www.powerlanguage.co.uk/wordle/">
               <i>Wordle</i>
             </a>
-            , which I think is based on the TV show <i>Lingo</i>.
+            , testing how quickly you can guess seven different words. There is a 3 second penalty for each wrong guess.
+          </p>
+          <p>
+            This project is a fork of{" "}
+            <a href="https://github.com/lynn/hello-wordl">
+              <i>hello-wordl</i>
+            </a>.
           </p>
           <p>
             You get {maxGuesses} tries to guess a target word.
@@ -89,12 +91,13 @@ function App() {
             />
             Got it!
           </p>
-          Report issues{" "}
-          <a href="https://github.com/lynn/hello-wordl/issues">here</a>, or
-          tweet <a href="https://twitter.com/chordbug">@chordbug</a>.
         </div>
       )}
-      <Game maxGuesses={maxGuesses} hidden={about} />
+      {started && <Game
+        maxGuesses={maxGuesses}
+        hidden={about}
+        initialTime={initialTime}
+      />}
     </div>
   );
 }

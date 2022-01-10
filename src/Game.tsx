@@ -4,8 +4,6 @@ import dictionary from "./dictionary.json";
 import { Clue, clue } from "./clue";
 import { Keyboard } from "./Keyboard";
 import common from "./common.json";
-import { dictionarySet, pick, resetRng, seed } from "./util";
-import { names } from "./names";
 
 enum GameState {
   Playing,
@@ -16,41 +14,41 @@ enum GameState {
 interface GameProps {
   maxGuesses: number;
   hidden: boolean;
+  initialTime: number;
 }
 
-const targets = common
-  .slice(0, 20000) // adjust for max target freakiness
-  .filter((word) => dictionarySet.has(word) && !names.has(word));
-
-function randomTarget(wordLength: number) {
-  const eligible = targets.filter((word) => word.length === wordLength);
-  return pick(eligible);
+function randomTarget() {
+  return common[Math.floor(common.length * Math.random())];
 }
 
 function Game(props: GameProps) {
+  const wordLength = 5;
+  const totalWords = 7;
+  const penaltyPerGuess = 3000; // 3 seconds
+
   const [gameState, setGameState] = useState(GameState.Playing);
   const [guesses, setGuesses] = useState<string[]>([]);
   const [currentGuess, setCurrentGuess] = useState<string>("");
-  const [wordLength, setWordLength] = useState(5);
+  const [time, setTime] = useState<number>(0);
+  const [penaltyTime, setPenaltyTime] = useState<number>(0);
+  
   const [hint, setHint] = useState<string>(`Make your first guess!`);
   const [target, setTarget] = useState(() => {
-    resetRng();
-    return randomTarget(wordLength);
+    return randomTarget();
   });
-  const [gameNumber, setGameNumber] = useState(1);
+  const [gamesWon, setGamesWon] = useState(0);
 
   const startNextGame = () => {
-    setTarget(randomTarget(wordLength));
+    setTarget(randomTarget());
     setGuesses([]);
     setCurrentGuess("");
     setHint("");
     setGameState(GameState.Playing);
-    setGameNumber((x) => x + 1);
   };
 
   const onKey = (key: string) => {
     if (gameState !== GameState.Playing) {
-      if (key === "Enter") {
+      if (key === "Enter" && gamesWon < totalWords) {
         startNextGame();
       }
       return;
@@ -72,22 +70,41 @@ function Game(props: GameProps) {
         return;
       }
       setGuesses((guesses) => guesses.concat([currentGuess]));
-      setCurrentGuess((guess) => "");
+      setCurrentGuess(() => "");
       if (currentGuess === target) {
-        setHint("You won! (Enter to play again)");
+        if (gamesWon < totalWords - 1) {
+          setHint("You won! (Enter to play next word)");
+        } else {
+          setHint("You won!");
+        }
         setGameState(GameState.Won);
-      } else if (guesses.length + 1 === props.maxGuesses) {
-        setHint(
-          `You lost! The answer was ${target.toUpperCase()}. (Enter to play again)`
-        );
-        setGameState(GameState.Lost);
+        setGamesWon(gamesWon + 1);
       } else {
-        setHint("");
-      }
+        setPenaltyTime(penaltyTime + penaltyPerGuess);
+
+        if (guesses.length + 1 === props.maxGuesses) {
+          setHint(
+            `You lost! The answer was ${target.toUpperCase()}. (Enter to play next word)`
+          );
+          setGameState(GameState.Lost);
+        } else {
+          setHint("");
+        }
+      } 
     }
   };
 
   useEffect(() => {
+    let interval: NodeJS.Timer | null = null;
+
+    if (gamesWon < totalWords) {
+      interval = setInterval(() => {
+        setTime(Date.now());
+      });
+    } else if (interval) {
+      clearInterval(interval);
+    }
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (!e.ctrlKey && !e.metaKey) {
         onKey(e.key);
@@ -96,8 +113,11 @@ function Game(props: GameProps) {
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      if (interval) {
+        clearInterval(interval);
+      }
     };
-  }, [currentGuess, gameState]);
+  }, [currentGuess, gameState, gamesWon]);
 
   let letterInfo = new Map<string, Clue>();
   const rowDivs = Array(props.maxGuesses)
@@ -125,32 +145,13 @@ function Game(props: GameProps) {
       );
     });
 
+  const secondsElapsed = (time > props.initialTime) ? ((time - props.initialTime + penaltyTime) / 1000) : 0;
+
   return (
     <div className="Game" style={{ display: props.hidden ? "none" : "block" }}>
+      <div style={{ marginBottom: 20 }}>{gamesWon}/{totalWords} wordles</div>
+      <div style={{ marginBottom: 20, fontSize: 40 }}>{secondsElapsed.toFixed(2)}</div>
       <div className="Game-options">
-        <label htmlFor="wordLength">Letters:</label>
-        <input
-          type="range"
-          min="4"
-          max="11"
-          id="wordLength"
-          disabled={
-            gameState === GameState.Playing &&
-            (guesses.length > 0 || currentGuess !== "")
-          }
-          value={wordLength}
-          onChange={(e) => {
-            const length = Number(e.target.value);
-            resetRng();
-            setGameNumber(1);
-            setGameState(GameState.Playing);
-            setGuesses([]);
-            setTarget(randomTarget(length));
-            setWordLength(length);
-            setHint(`${length} letters`);
-            (document.activeElement as HTMLElement)?.blur();
-          }}
-        ></input>
         <button
           style={{ flex: "0" }}
           disabled={gameState !== GameState.Playing || guesses.length === 0}
@@ -168,11 +169,6 @@ function Game(props: GameProps) {
       {rowDivs}
       <p>{hint || `\u00a0`}</p>
       <Keyboard letterInfo={letterInfo} onKey={onKey} />
-      {seed ? (
-        <div className="Game-seed-info">
-          seed {seed}, length {wordLength}, game {gameNumber}
-        </div>
-      ) : undefined}
     </div>
   );
 }
