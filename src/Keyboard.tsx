@@ -2,7 +2,7 @@ import { Clue, clueClass } from "./clue";
 
 interface KeyboardProps {
   letterInfo: Map<string, Clue>;
-  onKey: (key: string) => void;
+  onKey: (key: string, started: boolean, about: boolean) => void;
 }
 
 export function Keyboard(props: KeyboardProps) {
@@ -31,7 +31,7 @@ export function Keyboard(props: KeyboardProps) {
                 key={j}
                 className={className}
                 onClick={() => {
-                  props.onKey(label);
+                  props.onKey(label, true, false);
                 }}
               >
                 {label.replace("Backspace", "⌫")}

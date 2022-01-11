@@ -10,15 +10,18 @@ function App() {
   const [initialTime, setInitialTime] = useState(0);
 
   const maxGuesses = 6;
+
+  const startGame = () => {
+    setStarted(true);
+    setInitialTime(Date.now());
+  };
+
   return (
     <div className="App-container">
       <h1>seven wordles</h1>
       {!about && <button
           style={{ flex: "0", display: (started ? 'none' : 'block') }}
-          onClick={() => {
-            setStarted(true);
-            setInitialTime(Date.now());
-          }}
+          onClick={startGame}
         >
           Start!
         </button>}
@@ -93,11 +96,13 @@ function App() {
           </p>
         </div>
       )}
-      {started && <Game
+      <Game
         maxGuesses={maxGuesses}
-        hidden={about}
         initialTime={initialTime}
-      />}
+        startGame={startGame}
+        started={started}
+        about={about}
+      />
     </div>
   );
 }

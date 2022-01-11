@@ -13,8 +13,10 @@ enum GameState {
 
 interface GameProps {
   maxGuesses: number;
-  hidden: boolean;
   initialTime: number;
+  startGame: () => void;
+  started: boolean;
+  about: boolean;
 }
 
 function randomTarget() {
@@ -46,7 +48,18 @@ function Game(props: GameProps) {
     setGameState(GameState.Playing);
   };
 
-  const onKey = (key: string) => {
+  const onKey = (key: string, started: boolean, about: boolean) => {
+    if (about) {
+      return;
+    }
+
+    if (!started) {
+      if (key === "Enter") {
+        props.startGame();
+      }
+      return;
+    }
+
     if (gameState !== GameState.Playing) {
       if (key === "Enter" && gamesWon < totalWords) {
         startNextGame();
@@ -107,7 +120,7 @@ function Game(props: GameProps) {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (!e.ctrlKey && !e.metaKey) {
-        onKey(e.key);
+        onKey(e.key, props.started, props.about);
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -117,7 +130,7 @@ function Game(props: GameProps) {
         clearInterval(interval);
       }
     };
-  }, [currentGuess, gameState, gamesWon]);
+  }, [currentGuess, gameState, gamesWon, props.started, props.about]);
 
   let letterInfo = new Map<string, Clue>();
   const rowDivs = Array(props.maxGuesses)
@@ -148,7 +161,7 @@ function Game(props: GameProps) {
   const secondsElapsed = (time > props.initialTime) ? ((time - props.initialTime + penaltyTime) / 1000) : 0;
 
   return (
-    <div className="Game" style={{ display: props.hidden ? "none" : "block" }}>
+    <div className="Game" style={{ display: props.about || !props.started ? "none" : "block" }}>
       <div style={{ marginBottom: 20 }}>{gamesWon}/{totalWords} wordles</div>
       <div style={{ marginBottom: 20, fontSize: 40 }}>{secondsElapsed.toFixed(2)}</div>
       <div className="Game-options">
