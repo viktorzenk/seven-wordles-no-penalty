@@ -94,6 +94,9 @@ function App() {
             />
             Got it!
           </p>
+          Report issues{" "}
+          <a href="https://github.com/wooferzfg/seven-wordles/issues">here</a>, or
+          tweet <a href="https://twitter.com/wooferzfg">@wooferzfg</a>.
         </div>
       )}
       <Game
