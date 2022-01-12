@@ -4,6 +4,7 @@ import dictionary from "./dictionary.json";
 import { Clue, clue } from "./clue";
 import { Keyboard } from "./Keyboard";
 import common from "./common.json";
+import { pick, resetRng, seed } from "./util";
 
 enum GameState {
   Playing,
@@ -20,7 +21,7 @@ interface GameProps {
 }
 
 function randomTarget() {
-  return common[Math.floor(common.length * Math.random())];
+  return pick(common);
 }
 
 function Game(props: GameProps) {
@@ -36,6 +37,7 @@ function Game(props: GameProps) {
   
   const [hint, setHint] = useState<string>(`Make your first guess!`);
   const [target, setTarget] = useState(() => {
+    resetRng();
     return randomTarget();
   });
   const [gamesWon, setGamesWon] = useState(0);
@@ -182,6 +184,11 @@ function Game(props: GameProps) {
       {rowDivs}
       <p>{hint || `\u00a0`}</p>
       <Keyboard letterInfo={letterInfo} onKey={onKey} />
+      {seed ? (
+        <div className="Game-seed-info">
+          seed {seed}
+        </div>
+      ) : undefined}
     </div>
   );
 }
