@@ -20,10 +20,10 @@ function App() {
     <div className="App-container">
       <h1>seven wordles</h1>
       {!about && <button
-          style={{ flex: "0", display: (started ? 'none' : 'block') }}
+          style={{ flex: "0", display: (started ? 'none' : 'block'), fontSize: 20 }}
           onClick={startGame}
         >
-          Start!
+          Click to Start! (or press Enter)
         </button>}
       <div style={{ position: "absolute", right: 5, top: 5 }}>
         <a href="#" onClick={() => setAbout((a) => !a)}>
